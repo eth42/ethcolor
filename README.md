@@ -104,4 +104,72 @@ go.Figure(
 ).show()
 ```
 
+Load an image and update it's colors to be more diverse/differentiable.
+This obviously requires an image "image.png" in the current directory.
+This example also requires the additional python package `Pylette`.
+
+```python
+import ethcolor
+from scipy.interpolate import RBFInterpolator
+import numpy as np
+import Pylette
+from PIL import Image
+from tqdm.auto import tqdm
+from IPython.display import display
+
+# Image to load
+img_file = "image.png"
+# Palette size to extract from the image
+palette_size = 8
+
+def vector_interpolation(x,y):
+	interp = RBFInterpolator(x,y)
+	return lambda c: ethcolor.convert_color(
+		interp(
+			ethcolor.Color(ethcolor.COLOR_FORMATS.RGB, c)
+			.get_value(ethcolor.COLOR_FORMATS.OKLAB)[None]
+		)[0],
+		ethcolor.COLOR_FORMATS.OKLAB,
+		ethcolor.COLOR_FORMATS.RGB,
+	).get_value()
+
+# Extract the "fundamental" color palette of the image with Pylette
+palette1 = [
+	ethcolor.convert_color(c.rgb)
+	for c in Pylette.extract_colors(img_file, palette_size=palette_size).colors
+]
+# Display the palette before optimization
+ethcolor.display_palette(palette1)
+# Create an improved palette (high change_weight to not diverge from the original colors too much)
+palette2 = ethcolor.optimize_palette(palette1, change_weight=.95, out_format=ethcolor.COLOR_FORMATS.rgba)
+# Display the palette after optimization
+ethcolor.display_palette(palette2)
+# Extend the palettes before and after optimization
+# with the corners of the RGB color cube to ensure
+# that our interpolating projection does not extend
+# beyond the viable color space.
+boundary_colors = [
+	ethcolor.convert_color(f"rgb({r},{g},{b})")
+	for r in [0,1] for g in [0,1] for b in [0,1]
+]
+palette1 += boundary_colors
+palette2 += boundary_colors
+# Create an interpolation function between both palettes using scipy
+color_map = vector_interpolation(
+	np.array([c.get_value(ethcolor.COLOR_FORMATS.OKLAB) for c in palette1]),
+	np.array([c.get_value(ethcolor.COLOR_FORMATS.OKLAB) for c in palette2]),
+)
+# Load the image with pillow and extract the RGB values
+img = Image.open(img_file)
+img_arr = np.array(img)
+# Create a modified copy of the image using our interpolation function
+# between the original and the optimized colors
+new_img_arr = np.zeros_like(img_arr)
+for x in tqdm(range(img_arr.shape[0])):
+	for y in range(img_arr.shape[1]):
+		new_img_arr[x,y] = color_map(img_arr[x,y])
+new_img_arr = np.clip(new_img_arr, 0, 255)
+# Display both images side by side in the IPython shell
+display(Image.fromarray(np.concatenate([img_arr,new_img_arr],axis=1)))
+```
 
