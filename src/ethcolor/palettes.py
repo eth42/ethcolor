@@ -125,6 +125,32 @@ class Palette:
 			else:
 				warnings.warn(f"Color '{name}' already exists in palette '{self.name}', skipping this color")
 		return result
+	def to_latex(self: 'Palette', prefix_palette_name: Union[str,bool]=True) -> str:
+		r'''
+		Convert the palette to a block of LaTeX code defining all colors using the `\definecolor` package and using RGB values.
+		If `prefix_palette_name` is `True`, the colors are prefixed with the palette name separated with an underscore.
+		If `prefix_palette_name` is a string, the colors are prefixed with this string (no implicit underscore!).
+		If `prefix_palette_name` is `False`, no prefix is added.
+
+		:param prefix_palette_name: Prefix for the color names.
+		:return: LaTeX code defining the colors.
+		'''
+		prefix = (
+			self.name+"_"
+			if type(prefix_palette_name) == bool and prefix_palette_name else
+			prefix_palette_name
+			if type(prefix_palette_name) == str else 
+			None
+		)
+		single_col_template = r"\definecolor{{{:}}}{{RGB}}{{{:},{:},{:}}}"
+		color_defs = "\n".join([
+			single_col_template.format(
+				col_name if prefix is None else f"{prefix}{col_name}",
+				*col.get_value(COLOR_FORMATS.RGB) # type: ignore
+			)
+			for col_name, col in self.colors
+		])
+		return f"% Palette: {self.name}\n{color_defs}"
 
 class PaletteManager:
 	def __init__(self: 'PaletteManager'):

@@ -54,6 +54,13 @@ ethcolor.display_palette(palette)
 ethcolor.display_palette(opt_palette)
 ```
 
+Exporting a palette to LaTeX code:
+
+```python
+import ethcolor
+print(ethcolor.default_palettes.get_palette("cblind").to_latex("cb"))
+```
+
 Creating a random color palette and adding it to the default palette manager:
 
 ```python
