@@ -1,6 +1,9 @@
 from enum import Enum
 import numpy as np
-from typing import Union
+from typing import Union, Any
+
+_float_arr = np.ndarray[Any, np.dtype[np.floating[Any]]]
+_int_arr = np.ndarray[Any, np.dtype[np.integer[Any]]]
 
 _rgb_to_cie_mat = np.array([
 	[0.4124564, 0.3575761, 0.1804375],
@@ -109,10 +112,12 @@ class Color:
 		:return: Color format.
 		'''
 		return self.format
-	def __repr__(self: 'Color'):
+	def __repr__(self: 'Color') -> str:
 		return f"<{self.format.name}: {self.value}>"
-	def __str__(self: 'Color'):
-		return convert_color(self, out_format=COLOR_FORMATS.RGBA_S).value
+	def __str__(self: 'Color') -> str:
+		result = convert_color(self, out_format=COLOR_FORMATS.RGBA_S).value
+		assert type(result) == str
+		return result
 
 ColorLike = Union[str, np.ndarray, Color]
 
@@ -157,25 +162,25 @@ def convert_color(c: ColorLike, from_format:Union[COLOR_FORMATS,None]=None, out_
 	if type(c) == Color: c = c.get_value()
 	# Move to standardized format
 	match from_format:
-		case COLOR_FORMATS.RGB: c = _convert_RGB_to_rgba(c)
-		case COLOR_FORMATS.RGBA: c = _convert_RGBA_to_rgba(c)
-		case COLOR_FORMATS.RGB_S: c = _convert_RGB_S_to_rgba(c)
-		case COLOR_FORMATS.RGBA_S: c = _convert_RGBA_S_to_rgba(c)
-		case COLOR_FORMATS.rgb: c = _convert_rgb_to_rgba(c)
-		case COLOR_FORMATS.rgba: c = _convert_rgba_to_rgba(c)
-		case COLOR_FORMATS.rgb_S: c = _convert_rgb_S_to_rgba(c)
-		case COLOR_FORMATS.rgba_S: c = _convert_rgba_S_to_rgba(c)
-		case COLOR_FORMATS.HEX: c = _convert_hex_to_rgba(c)
-		case COLOR_FORMATS.CIE: c = _convert_cie_to_rgba(c)
-		case COLOR_FORMATS.CIEA: c = _convert_ciea_to_rgba(c)
-		case COLOR_FORMATS.LMS: c = _convert_lms_to_rgba(c)
-		case COLOR_FORMATS.LMSA: c = _convert_lmsa_to_rgba(c)
-		case COLOR_FORMATS.OKLAB: c = _convert_oklab_to_rgba(c)
-		case COLOR_FORMATS.OKLABA: c = _convert_oklaba_to_rgba(c)
-		case COLOR_FORMATS.HSL: c = _convert_hsl_to_rgba(c)
-		case COLOR_FORMATS.HSLA: c = _convert_hsla_to_rgba(c)
-		case COLOR_FORMATS.HSV: c = _convert_hsv_to_rgba(c)
-		case COLOR_FORMATS.HSVA: c = _convert_hsva_to_rgba(c)
+		case COLOR_FORMATS.RGB: c = _convert_RGB_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.RGBA: c = _convert_RGBA_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.RGB_S: c = _convert_RGB_S_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.RGBA_S: c = _convert_RGBA_S_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.rgb: c = _convert_rgb_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.rgba: c = _convert_rgba_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.rgb_S: c = _convert_rgb_S_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.rgba_S: c = _convert_rgba_S_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.HEX: c = _convert_hex_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.CIE: c = _convert_cie_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.CIEA: c = _convert_ciea_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.LMS: c = _convert_lms_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.LMSA: c = _convert_lmsa_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.OKLAB: c = _convert_oklab_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.OKLABA: c = _convert_oklaba_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.HSL: c = _convert_hsl_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.HSLA: c = _convert_hsla_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.HSV: c = _convert_hsv_to_rgba(c) # type:ignore
+		case COLOR_FORMATS.HSVA: c = _convert_hsva_to_rgba(c) # type:ignore
 		case _: raise ValueError("Unknown color format \"{:}\"".format(from_format))
 	# Move to target format
 	match out_format:
@@ -201,16 +206,16 @@ def convert_color(c: ColorLike, from_format:Union[COLOR_FORMATS,None]=None, out_
 		case _: raise ValueError("Unknown color format \"{:}\"".format(out_format))
 	return Color(out_format, result)
 
-def _convert_rgba_to_rgba(c): return c
+def _convert_rgba_to_rgba(c: _float_arr) -> _float_arr: return c
 
-def _convert_RGB_to_rgba(c): return np.array([*(c/255),1.])
-def _convert_RGBA_to_rgba(c): return c/255
-def _convert_RGB_S_to_rgba(c): return _convert_RGB_to_rgba(np.array([int(v) for v in c[4:-1].split(",")]))
-def _convert_RGBA_S_to_rgba(c): return _convert_RGBA_to_rgba(np.array([int(v) for v in c[5:-1].split(",")]))
-def _convert_rgb_to_rgba(c): return np.array([*c,1.])
-def _convert_rgb_S_to_rgba(c): return np.array([float(v) for v in c[4:-1].split(",")]+[1])
-def _convert_rgba_S_to_rgba(c): return np.array([float(v) for v in c[5:-1].split(",")])
-def _convert_hex_to_rgba(c):
+def _convert_RGB_to_rgba(c: _int_arr) -> _float_arr: return np.array([*(c/255),1.])
+def _convert_RGBA_to_rgba(c: _int_arr) -> _float_arr: return c/255
+def _convert_RGB_S_to_rgba(c: str) -> _float_arr: return _convert_RGB_to_rgba(np.array([int(v) for v in c[4:-1].split(",")]))
+def _convert_RGBA_S_to_rgba(c: str) -> _float_arr: return _convert_RGBA_to_rgba(np.array([int(v) for v in c[5:-1].split(",")]))
+def _convert_rgb_to_rgba(c: _float_arr) -> _float_arr: return np.array([*c,1.])
+def _convert_rgb_S_to_rgba(c: str) -> _float_arr: return np.array([float(v) for v in c[4:-1].split(",")]+[1])
+def _convert_rgba_S_to_rgba(c: str) -> _float_arr: return np.array([float(v) for v in c[5:-1].split(",")])
+def _convert_hex_to_rgba(c: str) -> _float_arr:
 	if c[0] == "#": c = c[1:]
 	if len(c) in [6,8]:
 		bytes_per_color = 2
@@ -234,8 +239,8 @@ def _convert_hex_to_rgba(c):
 	])
 	if len(int_rep) == 3: return _convert_RGB_to_rgba(int_rep)
 	else: return _convert_RGBA_to_rgba(int_rep)
-def _convert_cie_to_rgba(c): return _convert_ciea_to_rgba(np.array([*c,1.]))
-def _convert_ciea_to_rgba(c):
+def _convert_cie_to_rgba(c: _float_arr) -> _float_arr: return _convert_ciea_to_rgba(np.array([*c,1.]))
+def _convert_ciea_to_rgba(c: _float_arr) -> _float_arr:
 	global _cie_to_rgb_mat
 	cie_xyz = c[:3]
 	c_linear = np.dot(_cie_to_rgb_mat, cie_xyz)
@@ -246,22 +251,22 @@ def _convert_ciea_to_rgba(c):
 	)
 	rgb = np.clip(rgb, 0, 1)
 	return np.array([*rgb,c[3]])
-def _convert_lms_to_rgba(c): return _convert_lmsa_to_rgba(np.array([*c,1.]))
-def _convert_lmsa_to_rgba(c):
+def _convert_lms_to_rgba(c: _float_arr) -> _float_arr: return _convert_lmsa_to_rgba(np.array([*c,1.]))
+def _convert_lmsa_to_rgba(c: _float_arr) -> _float_arr:
 	global _lms_to_cie_mat
 	lms = c[:3]
 	xyz = np.dot(_lms_to_cie_mat, lms)
 	return _convert_ciea_to_rgba(np.array([*xyz,c[3]]))
-def _convert_oklab_to_rgba(c): return _convert_oklaba_to_rgba(np.array([*c,1.]))
-def _convert_oklaba_to_rgba(c):
+def _convert_oklab_to_rgba(c: _float_arr) -> _float_arr: return _convert_oklaba_to_rgba(np.array([*c,1.]))
+def _convert_oklaba_to_rgba(c: _float_arr) -> _float_arr:
 	global _oklab_to_lms_mat, _lms_to_cie_mat
 	# OKLab to CIE xyz
 	L, a, b, alpha = c
 	Lab, alpha = c[:3], c[3]
 	lms = np.dot(_oklab_to_lms_mat, Lab)**3
 	return _convert_lms_to_rgba(np.array([*lms, alpha]))
-def _convert_hsl_to_rgba(c): return _convert_hsla_to_rgba(np.array([*c,1.]))
-def _convert_hsla_to_rgba(c):
+def _convert_hsl_to_rgba(c: _float_arr) -> _float_arr: return _convert_hsla_to_rgba(np.array([*c,1.]))
+def _convert_hsla_to_rgba(c: _float_arr) -> _float_arr:
 	# Adapted from https://en.wikipedia.org/wiki/HSL_and_HSV#HSL_to_RGB
 	H, S, L, alpha = c
 	C = (1 - abs(2*L - 1)) * S
@@ -280,8 +285,8 @@ def _convert_hsla_to_rgba(c):
 	else:
 		R1,G1,B1 = C,0,X
 	return np.array([R1+m,G1+m,B1+m,alpha])
-def _convert_hsv_to_rgba(c): return _convert_hsva_to_rgba(np.array([*c,1.]))
-def _convert_hsva_to_rgba(c):
+def _convert_hsv_to_rgba(c: _float_arr) -> _float_arr: return _convert_hsva_to_rgba(np.array([*c,1.]))
+def _convert_hsva_to_rgba(c: _float_arr) -> _float_arr:
 	# Adapted from https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
 	H, S, V, alpha = c
 	C = V * S
@@ -301,16 +306,16 @@ def _convert_hsva_to_rgba(c):
 		R1,G1,B1 = C,0,X
 	return np.array([R1+m,G1+m,B1+m,alpha])
 
-def _convert_rgba_to_RGB(c): return np.round(c[:3]*255).astype(int)
-def _convert_rgba_to_RGBA(c): return np.round(c*255).astype(int)
-def _convert_rgba_to_RGB_S(c): return "RGB({},{},{})".format(*_convert_rgba_to_RGB(c))
-def _convert_rgba_to_RGBA_S(c): return "RGBA({},{},{},{})".format(*_convert_rgba_to_RGBA(c))
-def _convert_rgba_to_rgb(c): return c[:3]
-def _convert_rgba_to_rgb_S(c): return "rgb({},{},{})".format(*_convert_rgba_to_rgb(c))
-def _convert_rgba_to_rgba_S(c): return "rgba({},{},{},{})".format(*_convert_rgba_to_rgba(c))
-def _convert_rgba_to_hex(c, alpha=False): return "#"+"".join(["{:02x}".format(v) for v in _convert_rgba_to_RGBA(c[:4 if alpha else 3])])
-def _convert_rgba_to_cie(c): return _convert_rgba_to_ciea(c)[:3]
-def _convert_rgba_to_ciea(c):
+def _convert_rgba_to_RGB(c: _float_arr) -> _int_arr: return np.round(c[:3]*255).astype(int)
+def _convert_rgba_to_RGBA(c: _float_arr) -> _int_arr: return np.round(c*255).astype(int)
+def _convert_rgba_to_RGB_S(c: _float_arr) -> str: return "RGB({},{},{})".format(*_convert_rgba_to_RGB(c))
+def _convert_rgba_to_RGBA_S(c: _float_arr) -> str: return "RGBA({},{},{},{})".format(*_convert_rgba_to_RGBA(c))
+def _convert_rgba_to_rgb(c: _float_arr) -> _float_arr: return c[:3]
+def _convert_rgba_to_rgb_S(c: _float_arr) -> str: return "rgb({},{},{})".format(*_convert_rgba_to_rgb(c))
+def _convert_rgba_to_rgba_S(c: _float_arr) -> str: return "rgba({},{},{},{})".format(*_convert_rgba_to_rgba(c))
+def _convert_rgba_to_hex(c: _float_arr, alpha: bool=False) -> str: return "#"+"".join(["{:02x}".format(v) for v in _convert_rgba_to_RGBA(c[:4 if alpha else 3])])
+def _convert_rgba_to_cie(c: _float_arr) -> _float_arr: return _convert_rgba_to_ciea(c)[:3]
+def _convert_rgba_to_ciea(c: _float_arr) -> _float_arr:
 	global _rgb_to_cie_mat
 	# Linearize sRGB values
 	crgb = c[:3]
@@ -318,16 +323,16 @@ def _convert_rgba_to_ciea(c):
 	# Convert to XYZ using the standard matrix
 	xyz = np.dot(_rgb_to_cie_mat, c_linear)
 	return np.array([*xyz,c[3]])
-def _convert_rgba_to_lms(c): return _convert_rgba_to_lmsa(c)[:3]
-def _convert_rgba_to_lmsa(c):
+def _convert_rgba_to_lms(c: _float_arr) -> _float_arr: return _convert_rgba_to_lmsa(c)[:3]
+def _convert_rgba_to_lmsa(c: _float_arr) -> _float_arr:
 	global _cie_to_lms_mat
 	xyza = _convert_rgba_to_ciea(c)
 	xyz, alpha = xyza[:3], xyza[3]
 	# Convert XYZ to LMS
 	lms = np.dot(_cie_to_lms_mat, xyz)
 	return np.array([*lms,alpha])
-def _convert_rgba_to_oklab(c): return _convert_rgba_to_oklaba(c)[:3]
-def _convert_rgba_to_oklaba(c):
+def _convert_rgba_to_oklab(c: _float_arr) -> _float_arr: return _convert_rgba_to_oklaba(c)[:3]
+def _convert_rgba_to_oklaba(c: _float_arr) -> _float_arr:
 	global _cie_to_lms_mat, _lms_to_oklab_mat
 	lmsa = _convert_rgba_to_lmsa(c)
 	lms, alpha = lmsa[:3], lmsa[3]
@@ -336,8 +341,8 @@ def _convert_rgba_to_oklaba(c):
 	# Convert to Oklab
 	Lab = np.dot(_lms_to_oklab_mat, lms_nonlinear)
 	return np.array([*Lab,alpha])
-def _convert_rgba_to_hsl(c): return _convert_rgba_to_hsla(c)[:3]
-def _convert_rgba_to_hsla(c):
+def _convert_rgba_to_hsl(c: _float_arr) -> _float_arr: return _convert_rgba_to_hsla(c)[:3]
+def _convert_rgba_to_hsla(c: _float_arr) -> _float_arr:
 	# Adapted from https://en.wikipedia.org/wiki/HSL_and_HSV#RGB_to_HSL_and_HSV
 	rgb = c[:3]
 	maxc, minc = np.max(rgb), np.min(rgb)
@@ -354,8 +359,8 @@ def _convert_rgba_to_hsla(c):
 		else:
 			H = 60 * (((rgb[0] - rgb[1]) / delta) + 4)
 	return np.array([H,S,L,c[3]])
-def _convert_rgba_to_hsv(c): return _convert_rgba_to_hsva(c)[:3]
-def _convert_rgba_to_hsva(c):
+def _convert_rgba_to_hsv(c: _float_arr) -> _float_arr: return _convert_rgba_to_hsva(c)[:3]
+def _convert_rgba_to_hsva(c: _float_arr) -> _float_arr:
 	# Adapted from https://en.wikipedia.org/wiki/HSL_and_HSV#RGB_to_HSL_and_HSV
 	rgb = c[:3]
 	maxc, minc = np.max(rgb), np.min(rgb)

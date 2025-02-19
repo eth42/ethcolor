@@ -1,4 +1,4 @@
-from .formats import *
+from ethcolor.formats import *
 import warnings
 from typing import Iterable
 
@@ -12,7 +12,7 @@ STANDARD_MIXES = [
 ]
 
 class Palette:
-	def __init__(self: 'Palette', name: str, colors: Iterable[tuple[str,ColorLike]]):
+	def __init__(self: 'Palette', name: str, colors: Iterable[Union[tuple[str,ColorLike],Iterable[Union[str,ColorLike]]]]):
 		'''
 		Create a new palette.
 
@@ -24,9 +24,9 @@ class Palette:
 		colors = list(map(list,colors))
 		# Ensure that colors are in rgba format:
 		for i,c in enumerate(colors):
-			colors[i][1] = convert_color(c[1], detect_format(c[1]), COLOR_FORMATS.rgba)
+			colors[i][1] = convert_color(c[1], detect_format(c[1]), COLOR_FORMATS.rgba) # type: ignore
 		self.colors = colors
-		self.colors_by_name = {c[0]:c[1] for c in colors}
+		self.colors_by_name = {c[0]:c[1] for c in colors} # type: ignore
 	def get_name(self: 'Palette') -> str:
 		'''
 		Get the name of the palette.
@@ -41,7 +41,7 @@ class Palette:
 		:return: Number of colors.
 		'''
 		return len(self.colors)
-	def get_color(self: 'Palette', i: int, out_format:COLOR_FORMATS=COLOR_FORMATS.RGBA_S) -> Color:
+	def get_color(self: 'Palette', i: Union[str,int], out_format:COLOR_FORMATS=COLOR_FORMATS.RGBA_S) -> Color:
 		'''
 		Get a color from the palette.
 		The index will "wrap around" if it exceeds the number of colors.
@@ -51,8 +51,9 @@ class Palette:
 		:param out_format: Output format of the color.
 		:return: Color in the specified format.
 		'''
-		if type(i) == str: return self.colors[self.colors_by_name[i]]
-		return convert_color(self.colors[i%len(self.colors)][1], COLOR_FORMATS.rgba, out_format)
+		if type(i) == str:
+			return self.colors[self.colors_by_name[i]] # type: ignore
+		return convert_color(self.colors[i%len(self.colors)][1], COLOR_FORMATS.rgba, out_format) # type: ignore
 	def get_color_names(self: 'Palette') -> list[str]:
 		'''
 		Get the names of the colors in the palette.
@@ -60,7 +61,7 @@ class Palette:
 
 		:return: List of color names.
 		'''
-		return [c[0] for c in self.colors]
+		return [c[0] for c in self.colors] # type: ignore
 	def get_color_values(self: 'Palette', out_format:COLOR_FORMATS=COLOR_FORMATS.RGBA_S) -> list[Color]:
 		'''
 		Get the values of the colors in the palette.
@@ -69,7 +70,7 @@ class Palette:
 		:param out_format: Output format of the colors.
 		:return: List of color values.
 		'''
-		return [convert_color(c[1], COLOR_FORMATS.rgba, out_format) for c in self.colors]
+		return [convert_color(c[1], COLOR_FORMATS.rgba, out_format) for c in self.colors] # type: ignore
 	def add_color(self: 'Palette', name: str, color: ColorLike, format:Union[COLOR_FORMATS,None]=None) -> 'Palette':
 		'''
 		Add a color to the palette.
@@ -82,7 +83,7 @@ class Palette:
 		'''
 		assert name not in self.colors_by_name, f"Color name '{name}' already exists"
 		self.colors.append([name, convert_color(color, detect_format(color) if format is None else format, COLOR_FORMATS.rgba)])
-		self.colors_by_name[name] = self.colors[-1][1]
+		self.colors_by_name[name] = self.colors[-1][1] # type: ignore
 		return self
 	def remove_color(self: 'Palette', name: str) -> 'Palette':
 		'''
@@ -93,7 +94,7 @@ class Palette:
 		:return: Self for daisy chaining.
 		'''
 		assert name in self.colors_by_name, f"Color name '{name}' not found"
-		self.colors = [c for c in self.colors if c[0] != name]
+		self.colors = [c for c in self.colors if c[0] != name] # type: ignore
 		del self.colors_by_name[name]
 		return self
 	def ensure_black_and_white(self: 'Palette') -> 'Palette':
@@ -120,7 +121,7 @@ class Palette:
 		result = Palette(self.name, self.colors)
 		for name, color in other_palette.colors:
 			if name not in result.colors_by_name:
-				result.add_color(name, color)
+				result.add_color(name, color) # type: ignore
 			else:
 				warnings.warn(f"Color '{name}' already exists in palette '{self.name}', skipping this color")
 		return result
@@ -146,7 +147,7 @@ class PaletteManager:
 		if self.default_palette is None or set_default:
 			self.default_palette = palette.name
 		return self
-	def get_palette(self: 'PaletteManager', name: str=None) -> Palette:
+	def get_palette(self: 'PaletteManager', name:Union[str, None]=None) -> Palette:
 		'''
 		Get a palette from the manager by name.
 		If `name` is `None`, the default palette is returned.

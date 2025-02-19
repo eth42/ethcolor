@@ -1,9 +1,9 @@
 import numpy as np
-from .formats import *
-from .palettes import Palette
-from typing import Iterable
+from ethcolor.formats import *
+from ethcolor.palettes import Palette
+from typing import Iterable, Any
 
-def oklab_diversity_score(colors: Union[Palette, Iterable[ColorLike]]) -> float:
+def oklab_diversity_score(colors: Union[Palette, Iterable[ColorLike]]) -> np.floating[Any]:
 	'''
 	Compute the diversity score for a set of colors.
 	The score is the minimum pairwise distance between colors
@@ -16,6 +16,7 @@ def oklab_diversity_score(colors: Union[Palette, Iterable[ColorLike]]) -> float:
 	if type(colors) == Palette:
 		colors = np.array(colors.get_color_values(COLOR_FORMATS.OKLAB))
 	else:
+		assert isinstance(colors, Iterable)
 		colors = np.array([
 			convert_color(c, detect_format(c), COLOR_FORMATS.OKLAB).get_value()
 			for c in colors
@@ -25,7 +26,7 @@ def oklab_diversity_score(colors: Union[Palette, Iterable[ColorLike]]) -> float:
 			colors[None]-colors[:,None], axis=-1
 		)[np.triu_indices(len(colors),1)]
 	)
-def cblind_score(colors: Union[Palette, Iterable[ColorLike]], cblind_modes: Iterable[np.ndarray]=np.eye(3)) -> float:
+def cblind_score(colors: Union[Palette, Iterable[ColorLike]], cblind_modes: Iterable[np.ndarray[Any, np.dtype[np.floating[Any]]]]=np.eye(3)) -> np.floating[Any]:
 	"""
 	Compute the colorblind score for a set of colors.
 	The score is the average oklab diversity score of the colors
@@ -38,11 +39,12 @@ def cblind_score(colors: Union[Palette, Iterable[ColorLike]], cblind_modes: Iter
 		deuteranopia, and tritanopia with individual weights between 0 and 1.
 	:return: Colorblind score.
 	"""
-	from colorblind import simulate_colorblind
-	mode_scores = np.zeros(len(cblind_modes))
+	from ethcolor.colorblind import simulate_colorblind
+	mode_scores = np.zeros(len(list(cblind_modes)))
 	if type(colors) == Palette:
 		colors = np.array(colors.get_color_values(COLOR_FORMATS.OKLAB))
 	else:
+		assert isinstance(colors, Iterable)
 		colors = np.array([
 			convert_color(c, detect_format(c), COLOR_FORMATS.rgba)
 			for c in colors
@@ -62,10 +64,12 @@ def random_colors(n_total: int, **optim_params) -> list[Color]:
 	:return: List of colors.
 	'''
 	init = [Color(COLOR_FORMATS.rgb, np.random.sample(3)) for _ in range(n_total)]
-	return optimize_palette(
+	result = optimize_palette(
 		init,
 		**optim_params,
 	)
+	assert type(result) == list
+	return result
 def optimize_palette(colors: Union[Palette, Iterable[ColorLike]], change_weight:float=.1, cblind_weight:float=.5, cblind_modes:Iterable[np.ndarray]=np.eye(3), out_format:Union[COLOR_FORMATS,None]=None) -> Union[Palette, list[Color]]:
 	'''
 	Optimize a palette of colors for diversity and colorblindness.
@@ -89,7 +93,10 @@ def optimize_palette(colors: Union[Palette, Iterable[ColorLike]], change_weight:
 	if type(colors) == Palette:
 		in_palette = colors
 		colors = colors.get_color_values()
-	else: in_palette = None
+	else:
+		in_palette = None
+		assert isinstance(colors, Iterable)
+		colors = list(colors)
 	if out_format is None: out_format = detect_format(colors[0])
 	from scipy.optimize import minimize
 	# Translate to OKLAB color space
@@ -155,6 +162,7 @@ def extend_colors(colors: Iterable[ColorLike], n_total: int, out_format:Union[CO
 		used to optimize the palette (see optimize_palette).
 	:return: List of colors.
 	'''
+	colors = list(colors)
 	if out_format is None: out_format = detect_format(colors[0])
 	colors = np.array([
 		convert_color(c, detect_format(c), COLOR_FORMATS.OKLAB).get_value()
@@ -214,8 +222,9 @@ def extend_colors(colors: Iterable[ColorLike], n_total: int, out_format:Union[CO
 	result = np.concatenate([colors,new_colors])
 	result = [convert_color(c, COLOR_FORMATS.OKLAB, out_format) for c in result]
 	if post_optimize: result = optimize_palette(result, **optimize_kwargs)
+	assert type(result) == list
 	return result
 
 if 0: # Example
-	from util import display_palette
+	from ethcolor.util import display_palette
 	display_palette(random_colors(8))

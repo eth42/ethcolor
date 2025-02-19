@@ -2,7 +2,8 @@
 # https://github.com/tsarjak/Simulate-Correct-ColorBlindness/blob/master/utils.py
 
 import numpy as np
-from .formats import *
+from ethcolor.formats import *
+from typing import Any, Union
 
 _cb_rgba_to_lmsa_mat = np.array([
 	[17.8824, 43.5161, 4.11935, 0],
@@ -12,7 +13,7 @@ _cb_rgba_to_lmsa_mat = np.array([
 ]).T
 _cb_lmsa_to_rgba_mat = np.linalg.inv(_cb_rgba_to_lmsa_mat)
 
-def _mixed_sim_mat(degree_p:float=1.0, degree_d:float=1.0, degree_t:float=1.0) -> np.ndarray[float]:
+def _mixed_sim_mat(degree_p:float=1.0, degree_d:float=1.0, degree_t:float=1.0) -> np.ndarray[Any,np.dtype[np.float64]]:
 	"""
 	Matrix for Simulating Hybrid Colorblindness (protanomaly + deuteranomaly + tritanomaly) from LMS color-space.
 
@@ -41,6 +42,7 @@ def simulate_colorblind(c: ColorLike, protanopia:float=0.0, deuteranopia:float=0
 	global _cb_rgba_to_lmsa_mat, _cb_lmsa_to_rgba_mat
 	if out_format is None: out_format = detect_format(c)
 	rgba = convert_color(c, detect_format(c), COLOR_FORMATS.rgba).get_value()
+	assert type(rgba) == np.ndarray
 	lmsa = rgba.dot(_cb_rgba_to_lmsa_mat)
 	sim_lmsa = lmsa.dot(_mixed_sim_mat(protanopia, deuteranopia, tritanopia))
 	sim_rgba = sim_lmsa.dot(_cb_lmsa_to_rgba_mat)

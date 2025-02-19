@@ -1,8 +1,8 @@
 import numpy as np
-from .formats import COLOR_FORMATS, detect_format, convert_color, Color, ColorLike
-from .palettes import Palette
+from ethcolor.formats import COLOR_FORMATS, detect_format, convert_color, Color, ColorLike
+from ethcolor.palettes import Palette
 from enum import Enum
-from typing import Union, Iterable
+from typing import Union, Iterable, Any
 
 class INTERPOLATION_SPACES(Enum):
 	RGB = 1,
@@ -39,6 +39,7 @@ def color_mix(c1: ColorLike, percent: float, c2: ColorLike, out_format:Union[COL
 	a,b = percent/100,1-percent/100
 	c1 = convert_color(c1, detect_format(c1), mid_format).get_value()
 	c2 = convert_color(c2, detect_format(c2), mid_format).get_value()
+	assert type(c1) == np.ndarray and type(c2) == np.ndarray
 	return convert_color(c1*a+c2*b, mid_format, out_format)
 def interpolate_colors(c1: ColorLike, c2: ColorLike, n_steps: int, out_format: Union[COLOR_FORMATS,None]=None, space:INTERPOLATION_SPACES=INTERPOLATION_SPACES.OKLAB) -> list[Color]:
 	'''
@@ -62,6 +63,7 @@ def interpolate_colors(c1: ColorLike, c2: ColorLike, n_steps: int, out_format: U
 		case _: raise ValueError("Unknown color space \"{:}\"".format(space))
 	c1 = convert_color(c1, detect_format(c1), mid_format).get_value()
 	c2 = convert_color(c2, detect_format(c2), mid_format).get_value()
+	assert type(c1) == np.ndarray and type(c2) == np.ndarray
 	return [
 		convert_color(
 			a*c1+(1-a)*c2,
@@ -82,6 +84,7 @@ def interpolate_color_series(colors: Iterable[ColorLike], n_steps_total: int, ou
 	:param space: Color space to use for interpolation.
 	:return: List of colors.
 	'''
+	colors = list(colors)
 	if out_format is None: out_format = detect_format(colors[0])
 	match space:
 		case INTERPOLATION_SPACES.RGB: mid_format = COLOR_FORMATS.rgba
@@ -98,7 +101,7 @@ def interpolate_color_series(colors: Iterable[ColorLike], n_steps_total: int, ou
 	a,b = positions.astype(int),positions%1
 	interp_colors = colors[a]*(1-b)[:,None]+colors[a+1]*b[:,None]
 	return [convert_color(c, mid_format, out_format) for c in interp_colors]
-def create_plotly_scale(colors: Union[Palette, Iterable[ColorLike]], positions=None) -> list[list[Union[float,str]]]:
+def create_plotly_scale(colors: Union[Palette, Iterable[ColorLike]], positions=None) -> list[list[Union[str,np.floating]]]:
 	'''
 	Create a plotly-compatible color scale from a list of colors.
 	The resulting list will contain colors in the RGBA string format.
@@ -108,8 +111,12 @@ def create_plotly_scale(colors: Union[Palette, Iterable[ColorLike]], positions=N
 	:return: List of colors in the format [[position, color], ...].
 	'''
 	if type(colors) == Palette: colors = colors.get_color_values()
-	if positions is None: positions = np.linspace(0,1,len(colors))
-	return [[p,convert_color(v,out_format=COLOR_FORMATS.RGBA_S).get_value()] for p,v in zip(positions,colors)]
+	else:
+		assert isinstance(colors, Iterable)
+		colors = list(colors)
+	if positions is None:
+		positions = np.linspace(0,1,len(colors))
+	return [[p,convert_color(v,out_format=COLOR_FORMATS.RGBA_S).get_value()] for p,v in zip(positions,colors)] # type: ignore
 def display_palette(colors: Union[Palette, Iterable[ColorLike]], width: int=500, height: int=80) -> None:
 	'''
 	Display a list of colors in a horizontal bar.
@@ -120,11 +127,16 @@ def display_palette(colors: Union[Palette, Iterable[ColorLike]], width: int=500,
 	'''
 	from PIL import Image
 	from IPython.display import display
-	if type(colors) == Palette: colors = colors.get_color_values()
+	if type(colors) == Palette:
+		colors = colors.get_color_values()
+	else:
+		assert isinstance(colors, Iterable)
+		colors = list(colors)
 	img_arr = np.zeros((height,width,3), dtype=np.uint8)
 	x_limits = np.linspace(0,width,len(colors)+1).round().astype(int)
 	for i,c in enumerate(colors):
 		rgba = convert_color(c, detect_format(c), COLOR_FORMATS.rgba).get_value()
+		assert type(rgba) == np.ndarray
 		rgb, alpha = rgba[:3], rgba[3]
 		rgb = alpha*rgb+(1-alpha)*np.ones(3)
 		rgb = (rgb*255).round().astype(int)
