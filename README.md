@@ -51,23 +51,56 @@ Both of these functions allow for some customization of the print.
 
 ## Examples
 
-Loading the plotly default palette, adding black and white as contrast colors, modifying it for better visibility and displaying the original and the optimized version in the IPython shell:
+Loading the plotly default palette, adding black and white, modifying it for better visibility and displaying the original and the optimized version in the IPython shell as is and with different types of simulated colorblindnesses:
 
 ```python
 import ethcolor
+from ethcolor import display_palette, simulate_colorblind, hue_sort
+import numpy as np
 palette = ethcolor.default_palettes.get_palette("plotly").ensure_black_and_white()
-# Set change_weight to a high value to not move to far away from the original palette
-opt_palette = ethcolor.optimize_palette(palette, change_weight=.8)
-ethcolor.display_palette(palette)
-ethcolor.display_palette(opt_palette)
+# Set change_weight to a low value as the number of colors and adding black and white sufficiently constrains the optimization
+opt_palette = ethcolor.optimize_palette(palette, change_weight=.15)
+print("No colorblindness")
+display_palette(hue_sort(palette.get_color_values()))
+display_palette(hue_sort(opt_palette.get_color_values()))
+for cb,v in zip(["Protanopia","Deutranopia","Tritanopia"], np.eye(3)*.75):
+	print(f"75% {cb}")
+	display_palette(hue_sort([
+		simulate_colorblind(c, *v)
+		for c in palette.get_color_values()
+	]))
+	display_palette(hue_sort([
+		simulate_colorblind(c, *v)
+		for c in opt_palette.get_color_values()
+	]))
 ```
 
 <details>
 <summary>Output</summary>
 
+No colorblindness
+
 ![Original palette](readme_assets/example1.1.png)
 
 ![Improved palette](readme_assets/example1.2.png)
+
+75% Protanopia
+
+![Original palette](readme_assets/example1.3.png)
+
+![Improved palette](readme_assets/example1.4.png)
+
+75% Deutranopia
+
+![Original palette](readme_assets/example1.5.png)
+
+![Improved palette](readme_assets/example1.6.png)
+
+75% Tritanopia
+
+![Original palette](readme_assets/example1.7.png)
+
+![Improved palette](readme_assets/example1.8.png)
 </details><br/>
 
 Exporting a palette to LaTeX code:
