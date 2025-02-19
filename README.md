@@ -1,6 +1,6 @@
 # ethcolor
 A basic python package to generate, organize, expand, and optimize accessible color palettes.
-This packages is aimed at scientific plots, where the differentiability of colors is way more important than the "beauty" of a palette.
+This package is aimed at scientific plots, where the differentiability of colors is way more important than the "beauty" of a palette.
 The main goal is thus, to have very distinguishable colors for colorblind and non-colorblind people, rather than a pretty combination of (often similar in tone) colors.
 
 ## Color Spaces
@@ -19,10 +19,13 @@ All other color formats should be instantiated using the `Color` class or calls 
 
 ## Palette Management
 This package contains the classes `PaletteManager` and `Palette`.
-A `Palette` has a name and should contain multiple named colors, provided as a list of lists `[name, color]` (as the `color` will be replaced, this must be a list, not a tuple).
+A `Palette` has a name and should contain multiple named colors, provided as a list of lists `[name, color]`.
 Internally, all colors are first translated to the floating-point `rgba` space, but the getters allow for arbitrary color spaces.
 The `PaletteManager` can contain multiple `Palette`s. The first added `Palette` will be considered the default palette until otherwise specified.
 A default `PaletteManager` with a few predefined color palettes can be accessed under the name `default_palettes`.
+Aside from defining the color names yourself, you can use `colors_to_palette` to convert a list of `Color`s and a palette name to a `Palette` with automatically generated color names.
+The name format of the colors can be specified (e.g. snake case or camel case).
+You can also create a copy of a `Palette` with generated names using the `Palette.to_renamed_colors` function.
 
 ## Palette Modifications
 One of the main goals of this package is to provide an easy way to adapt your color palettes to different types of color blindness.
@@ -40,6 +43,11 @@ To view colors, you can use the `display_palette` function which either takes a 
 You can also use the `create_plotly_scale` function to translate your colors/`Palette` into the format of a plotly color scale.
 
 To print colors, you can convert them to the string formats `RGB_S`, `RGBA_S`, `rgb_S`, `rgba_S`, and `HEX` and access their strings by calling `Color.get_value()`.
+
+## Exporting Palettes
+The `Palette` class contains the functions `to_latex` and `to_python` to generate blocks of LaTeX or Python code that defines your palette.
+This allows for easy interoperability between the two languages, where some plots may be defined in LaTeX using TikZ and some plots may be prerendered with Python.
+Both of these functions allow for some customization of the print.
 
 ## Examples
 
@@ -69,7 +77,7 @@ import numpy as np
 # Seeding of the numpy random generator for reproducible palette generation
 np.random.seed(42)
 colors = ethcolor.random_colors(8)
-palette = ethcolor.colors_to_palette("random", colors, ethcolor.NAME_FORMATS.SNAKE)
+palette = ethcolor.colors_to_palette("random", colors, name_format=ethcolor.NAME_FORMATS.SNAKE)
 ethcolor.default_palettes.add_palette(palette)
 # Displaying the new palette
 ethcolor.display_palette(ethcolor.default_palettes.get_palette("random"))
@@ -109,7 +117,7 @@ go.Figure(
 ).show()
 ```
 
-Load an image and update it's colors to be more diverse/differentiable.
+Load an image and update its colors to be more diverse/differentiable.
 This obviously requires an image "image.png" in the current directory.
 This example also requires the additional python package `Pylette`.
 
