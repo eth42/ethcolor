@@ -3,6 +3,21 @@ A basic python package to generate, organize, expand, and optimize accessible co
 This package is aimed at scientific plots, where the differentiability of colors is way more important than the "beauty" of a palette.
 The main goal is thus, to have very distinguishable colors for colorblind and non-colorblind people, rather than a pretty combination of (often similar in tone) colors.
 
+## Installation
+
+For now, `ethcolor` is not published on pypi, so you will have to install it either by cloning the repository
+
+```bash
+git clone https://github.com/eth42/ethcolor.git
+pip install ethcolor
+```
+
+or by installing it from the URL directly
+
+```bash
+pip install git+https://github.com/eth42/ethcolor.git
+```
+
 ## Color Spaces
 This package provides the wrapper class `Color` for color specifications, which contains the (numeric/string) representation as well as a declaration of the color space.
 The available color spaces are listed in the enum class `COLOR_FORMATS` and include Hex, RGB, HSL, HSV, CIE XYZ, OKLAB, and LMS, each with and without alpha channel.
@@ -287,3 +302,5 @@ display(Image.fromarray(np.concatenate([img_arr,new_img_arr],axis=1)))
 
 The colorblindness simulation code is still a bit work-in-progress.
 It works, but gives somewhat different results than reference implementations, so that has to be verified.
+
+Some of the color conversions (especially those ot OKLAB color space) can produce runtime warnings. Those can be safely ignored, but if/when I find time for it, I may fix the issue in the future.
