@@ -53,7 +53,7 @@ def cblind_score(colors: Union[Palette, Iterable[ColorLike]], cblind_modes: Iter
 		sim_colors = [simulate_colorblind(c, *mode) for c in colors]
 		mode_scores[i_mode] = oklab_diversity_score(sim_colors)
 	return np.mean(mode_scores)
-def random_colors(n_total: int, **optim_params) -> list[Color]:
+def random_colors(n_total: int, black=False, white=False, **optim_params) -> list[Color]:
 	'''
 	Generate a random palette of colors by randomly sampling
 	RGB values and optimizing them for diversity and colorblindness.
@@ -64,6 +64,8 @@ def random_colors(n_total: int, **optim_params) -> list[Color]:
 	:return: List of colors.
 	'''
 	init = [Color(COLOR_FORMATS.rgb, np.random.sample(3)) for _ in range(n_total)]
+	if black: init.append(Color(COLOR_FORMATS.rgb, np.zeros(3)))
+	if white: init.append(Color(COLOR_FORMATS.rgb, np.ones(3)))
 	result = optimize_palette(
 		init,
 		**optim_params,

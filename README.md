@@ -51,16 +51,24 @@ Both of these functions allow for some customization of the print.
 
 ## Examples
 
-Loading the plotly default palette, modifying it for better visibility and displaying the original and the optimized version in the IPython shell:
+Loading the plotly default palette, adding black and white as contrast colors, modifying it for better visibility and displaying the original and the optimized version in the IPython shell:
 
 ```python
 import ethcolor
-palette = ethcolor.default_palettes.get_palette("plotly")
+palette = ethcolor.default_palettes.get_palette("plotly").ensure_black_and_white()
 # Set change_weight to a high value to not move to far away from the original palette
 opt_palette = ethcolor.optimize_palette(palette, change_weight=.8)
 ethcolor.display_palette(palette)
 ethcolor.display_palette(opt_palette)
 ```
+
+<details>
+<summary>Output</summary>
+
+![Original palette](readme_assets/example1.1.png)
+
+![Improved palette](readme_assets/example1.2.png)
+</details><br/>
 
 Exporting a palette to LaTeX code:
 
@@ -69,6 +77,22 @@ import ethcolor
 print(ethcolor.default_palettes.get_palette("cblind").to_latex("cb"))
 ```
 
+<details>
+<summary>Output</summary>
+
+```latex
+% Palette: cblind
+\definecolor{cbblack}{RGB}{0,0,0}
+\definecolor{cborange}{RGB}{251,162,0}
+\definecolor{cbcyan}{RGB}{0,183,236}
+\definecolor{cbgreen}{RGB}{0,161,119}
+\definecolor{cbyellow}{RGB}{246,231,55}
+\definecolor{cbblue}{RGB}{0,119,184}
+\definecolor{cbvermillion}{RGB}{244,100,13}
+\definecolor{cbpurple}{RGB}{228,126,173}
+```
+</details><br/>
+
 Creating a random color palette, automatically detect color names in snake case, adding the palette to the default palette manager, and printing Python code to define the palette in the future without running the optimization:
 
 ```python
@@ -76,13 +100,36 @@ import ethcolor
 import numpy as np
 # Seeding of the numpy random generator for reproducible palette generation
 np.random.seed(42)
-colors = ethcolor.random_colors(8)
+# Setting `white=True` appends white before optimizing, such that all colors
+# get pushed away from white. Indexing up to the last element removes white,
+# so we do not add it to our palette.
+colors = ethcolor.random_colors(8, white=True)[:-1]
 palette = ethcolor.colors_to_palette("random", colors, name_format=ethcolor.NAME_FORMATS.SNAKE)
 ethcolor.default_palettes.add_palette(palette)
 # Displaying the new palette
 ethcolor.display_palette(ethcolor.default_palettes.get_palette("random"))
 print(ethcolor.default_palettes.get_palette("random").to_python())
 ```
+
+<details>
+<summary>Output</summary>
+
+![Random palette](readme_assets/example3.1.png)
+
+```python
+# Palette: random
+palette = ethcolor.Palette("random", [
+  ["spring_green", "RGB(0,255,118)"],
+  ["yellow_sea", "RGB(255,168,0)"],
+  ["observatory", "RGB(0,132,111)"],
+  ["christalle", "RGB(48,0,110)"],
+  ["torch_red", "RGB(241,0,45)"],
+  ["blue", "RGB(57,0,255)"],
+  ["dull_lavender", "RGB(182,139,255)"],
+  ["deep_fir", "RGB(0,59,0)"],
+])
+```
+</details><br/>
 
 Creating a color gradient and using it as a color scale in a plotly figure:
 
@@ -117,9 +164,16 @@ go.Figure(
 ).show()
 ```
 
+<details>
+<summary>Output</summary>
+
+![Colored scatter plot](readme_assets/example4.1.png)
+</details><br/>
+
 Load an image and update its colors to be more diverse/differentiable.
-This obviously requires an image "image.png" in the current directory.
-This example also requires the additional python package `Pylette`.
+Displays the palette before and after optimization.
+The "before" and "after" image are then plotted side by side.
+This example requires the additional python package `Pylette`.
 
 ```python
 import ethcolor
@@ -131,7 +185,7 @@ from tqdm.auto import tqdm
 from IPython.display import display
 
 # Image to load
-img_file = "image.png"
+img_file = "readme_assets/example5.1.png"
 # Palette size to extract from the image
 palette_size = 8
 
@@ -185,6 +239,16 @@ new_img_arr = np.clip(new_img_arr, 0, 255)
 # Display both images side by side in the IPython shell
 display(Image.fromarray(np.concatenate([img_arr,new_img_arr],axis=1)))
 ```
+
+<details>
+<summary>Output</summary>
+
+![Colored scatter plot](readme_assets/example5.2.png)
+
+![Colored scatter plot](readme_assets/example5.3.png)
+
+![Colored scatter plot](readme_assets/example5.4.png)
+</details><br/>
 
 ## Open Issues
 
