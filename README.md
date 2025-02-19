@@ -61,7 +61,7 @@ import ethcolor
 print(ethcolor.default_palettes.get_palette("cblind").to_latex("cb"))
 ```
 
-Creating a random color palette and adding it to the default palette manager:
+Creating a random color palette, automatically detect color names in snake case, adding the palette to the default palette manager, and printing Python code to define the palette in the future without running the optimization:
 
 ```python
 import ethcolor
@@ -69,13 +69,11 @@ import numpy as np
 # Seeding of the numpy random generator for reproducible palette generation
 np.random.seed(42)
 colors = ethcolor.random_colors(8)
-palette = ethcolor.Palette("random", [
-	[f"random{i}", c]
-	for i,c in enumerate(colors)
-])
+palette = ethcolor.colors_to_palette("random", colors, ethcolor.NAME_FORMATS.SNAKE)
 ethcolor.default_palettes.add_palette(palette)
 # Displaying the new palette
 ethcolor.display_palette(ethcolor.default_palettes.get_palette("random"))
+print(ethcolor.default_palettes.get_palette("random").to_python())
 ```
 
 Creating a color gradient and using it as a color scale in a plotly figure:

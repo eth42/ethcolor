@@ -19,6 +19,13 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+  "scipy",
+  "numpy",
+  "ipython",
+  "pillow",
+  "pycolornames",
+]
 
 [project.urls]
 Homepage = "https://github.com/eth42/ethcolor"

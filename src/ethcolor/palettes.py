@@ -11,6 +11,14 @@ STANDARD_MIXES = [
 	["DARK", 50, BLACK],
 ]
 
+class NAME_FORMATS(Enum):
+	SNAKE = 1,
+	CAMEL = 2,
+	SPACE = 3,
+	SPACE_LOWER = 4,
+	NOSPACE = 5,
+	NOSPACE_LOWER = 6,
+
 class Palette:
 	def __init__(self: 'Palette', name: str, colors: Iterable[Union[tuple[str,ColorLike],Iterable[Union[str,ColorLike]]]]):
 		'''
@@ -151,6 +159,26 @@ class Palette:
 			for col_name, col in self.colors
 		])
 		return f"% Palette: {self.name}\n{color_defs}"
+	def to_python(self: 'Palette', include_alpha: bool=False) -> str:
+		'''
+		Convert the palette to a block of Python code defining the `Palette` object.
+		This is especially useful if you optimized the palette or created a random palette and want to reuse it in the future.
+
+		:return: Python code defining the palette.
+		'''
+		color_strings: list[str] = list(map(lambda v: f'"{v}"', self.get_color_values()))
+		color_defs = "\n".join([
+			f'  ["{name}", "{color.get_value(COLOR_FORMATS.RGBA_S if include_alpha else COLOR_FORMATS.RGB_S)}"],' # type: ignore
+			for name, color in self.colors
+		])
+		return f"# Palette: {self.name}\npalette = ethcolor.Palette(\"{self.name}\", [\n{color_defs}\n])"
+	def to_renamed_colors(self: 'Palette', color_name_format: NAME_FORMATS=NAME_FORMATS.SNAKE) -> 'Palette':
+		'''
+		Create a copy of the palette with automatically renamed colors.
+
+		:return: New palette object.
+		'''
+		return colors_to_palette(self.name, self.get_color_values(), name_format=color_name_format)
 
 class PaletteManager:
 	def __init__(self: 'PaletteManager'):
@@ -221,6 +249,47 @@ class PaletteManager:
 		self.default_palette = name
 		return self
 
+def colors_to_palette(palette_name: str, colors: Iterable[ColorLike], color_names:Union[Iterable[str],None]=None, name_format: NAME_FORMATS=NAME_FORMATS.SNAKE) -> Palette:
+	'''
+	Create a palette from a list of colors using either specified color names or "guessing" the colors using `pycolornames`.
+
+	:param colors: List of colors.
+	:param name: Name of the palette.
+	:param color_names: List of color names. If `None` is specified, guesses the color names using `pycolornames`.
+	:return: Palette object.
+	'''
+	colors = list(colors)
+	if color_names is None:
+		import colornames
+		color_names = [
+			colornames.find(*map(int,convert_color(c, out_format=COLOR_FORMATS.RGB).get_value()))
+			for c in colors
+		]
+		# Append numbers to names occuring more than once
+		unique_names, name_counts = np.unique(color_names, return_counts=True)
+		reoccuring_name_counts = {
+			name: 0
+			for name,count in zip(unique_names,name_counts)
+			if count > 1
+		}
+		for i in range(len(color_names)):
+			if color_names[i] in reoccuring_name_counts:
+				reoccuring_name_counts[color_names[i]] = reoccuring_name_counts[color_names[i]]+1
+				color_names[i] = "{:} {:}".format(color_names[i],reoccuring_name_counts[color_names[i]])
+		# Simplify names
+		match name_format:
+			case NAME_FORMATS.SNAKE: color_names = [n.lower().replace(" ","_") for n in color_names]
+			case NAME_FORMATS.CAMEL: color_names = [n.title().replace(" ","") for n in color_names]
+			case NAME_FORMATS.SPACE: pass
+			case NAME_FORMATS.SPACE_LOWER: color_names = [n.lower() for n in color_names]
+			case NAME_FORMATS.NOSPACE: color_names = [n.replace(" ","") for n in color_names]
+			case NAME_FORMATS.NOSPACE_LOWER: color_names = [n.lower().replace(" ","") for n in color_names]
+			case _: raise ValueError("Unknown name format \"{:}\"".format(name_format))
+	return Palette(palette_name, [
+		[n, c]
+		for n,c in zip(color_names,colors)
+	])
+
 default_palettes = PaletteManager()
 
 # Taken from:
@@ -263,29 +332,29 @@ default_palettes.add_palette(Palette("ml2r", [
 	['green', '#80b52c'],
 ]))
 
-default_palettes.add_palette(Palette("plotly", [
-	['plotly0', '#636EFA'],
-	['plotly1', '#EF553B'],
-	['plotly2', '#00CC96'],
-	['plotly3', '#AB63FA'],
-	['plotly4', '#FFA15A'],
-	['plotly5', '#19D3F3'],
-	['plotly6', '#FF6692'],
-	['plotly7', '#B6E880'],
-	['plotly8', '#FF97FF'],
-	['plotly9', '#FECB52'],
+default_palettes.add_palette(colors_to_palette("plotly", [
+	'#636EFA',
+	'#EF553B',
+	'#00CC96',
+	'#AB63FA',
+	'#FFA15A',
+	'#19D3F3',
+	'#FF6692',
+	'#B6E880',
+	'#FF97FF',
+	'#FECB52',
 ]))
 
-default_palettes.add_palette(Palette("d3", [
-	['d3_0', '#1f77b4'],
-	['d3_1', '#ff7f0e'],
-	['d3_2', '#2ca02c'],
-	['d3_3', '#d62728'],
-	['d3_4', '#9467bd'],
-	['d3_5', '#8c564b'],
-	['d3_6', '#e377c2'],
-	['d3_7', '#7f7f7f'],
-	['d3_8', '#bcbd22'],
-	['d3_9', '#17becf'],
+default_palettes.add_palette(colors_to_palette("d3", [
+	'#1f77b4',
+	'#ff7f0e',
+	'#2ca02c',
+	'#d62728',
+	'#9467bd',
+	'#8c564b',
+	'#e377c2',
+	'#7f7f7f',
+	'#bcbd22',
+	'#17becf',
 ]))
 
