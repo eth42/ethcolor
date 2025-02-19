@@ -25,8 +25,8 @@ Using either the `Color.get_value(space)` method or the `convert_color` function
 Most functions also accept "raw" inputs such as `RGB(100,50,10)`, which are automatically parsed as follows:
 
 - Format `HEX`: Strings starting with `#` are interpret as hex colors. Strings of length 3 or 6 are considered RGB values and strings of length 4 and 8 are considered RGBA values.
-- Formats `RGB_S` and `RGBA_S`: Strings of the type `RGB(..., ..., ...)` and `RGBA(..., ..., ...)` are considered RGB and RGBA values with values ranging from 0 to 255.
-- Formats `rgb_S` and `rgba_S`: Strings of the type `rgb(..., ..., ...)` and `rgba(..., ..., ...)` are considered RGB and RGBA values with float values ranging from 0 to 1.
+- Formats `RGB_S` and `RGBA_S`: Strings of the type `RGB(..., ..., ...)` and `RGBA(..., ..., ..., ...)` are considered RGB and RGBA values with values ranging from 0 to 255.
+- Formats `rgb_S` and `rgba_S`: Strings of the type `rgb(..., ..., ...)` and `rgba(..., ..., ..., ...)` are considered RGB and RGBA values with float values ranging from 0 to 1.
 - Formats `RGB` and `RGBA`: Integer numpy arrays of length 3 or 4 are considered RGB and RGBA values with values ranging from 0 to 255.
 - Formats `rgb` and `rgba`: Float numpy arrays of length 3 or 4 are considered RGB and RGBA values with float values ranging from 0 to 1.
 
