@@ -2,8 +2,7 @@
 # https://github.com/tsarjak/Simulate-Correct-ColorBlindness/blob/master/utils.py
 
 import numpy as np
-from enum import Enum
-from formats import *
+from .formats import *
 
 _cb_rgba_to_lmsa_mat = np.array([
 	[17.8824, 43.5161, 4.11935, 0],
@@ -13,9 +12,10 @@ _cb_rgba_to_lmsa_mat = np.array([
 ]).T
 _cb_lmsa_to_rgba_mat = np.linalg.inv(_cb_rgba_to_lmsa_mat)
 
-def _mixed_sim_mat(degree_p=1.0, degree_d=1.0, degree_t=1.0):
+def _mixed_sim_mat(degree_p:float=1.0, degree_d:float=1.0, degree_t:float=1.0) -> np.ndarray[float]:
 	"""
 	Matrix for Simulating Hybrid Colorblindness (protanomaly + deuteranomaly + tritanomaly) from LMS color-space.
+
 	:param degree_p: protanomaly degree.
 	:param degree_d: deuteranomaly degree.
 	:param degree_t: tritanomaly degree.
@@ -27,7 +27,17 @@ def _mixed_sim_mat(degree_p=1.0, degree_d=1.0, degree_t=1.0):
 		[0, 0, 0, 1],
 	]).T
 
-def simulate_colorblind(c, protanopia=0.0, deuteranopia=0.0, tritanopia=0.0, out_format=None):
+def simulate_colorblind(c: ColorLike, protanopia:float=0.0, deuteranopia:float=0.0, tritanopia:float=0.0, out_format:Union[COLOR_FORMATS,None]=None) -> Color:
+	'''
+	Simulate colorblindness on a color.
+
+	:param c: Color to simulate.
+	:param protanopia: Degree of protanopia (0-1).
+	:param deuteranopia: Degree of deuteranopia (0-1).
+	:param tritanopia: Degree of tritanopia (0-1).
+	:param out_format: Output format of the color.
+	:return: Color with simulated colorblindness.
+	'''
 	global _cb_rgba_to_lmsa_mat, _cb_lmsa_to_rgba_mat
 	if out_format is None: out_format = detect_format(c)
 	rgba = convert_color(c, detect_format(c), COLOR_FORMATS.rgba).get_value()

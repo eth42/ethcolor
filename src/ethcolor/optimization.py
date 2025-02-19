@@ -1,61 +1,75 @@
 import numpy as np
-from formats import *
-from palettes import Palette
+from .formats import *
+from .palettes import Palette
+from typing import Iterable
 
-def oklab_diversity_score(colors):
+def oklab_diversity_score(colors: Union[Palette, Iterable[ColorLike]]) -> float:
 	'''
 	Compute the diversity score for a set of colors.
 	The score is the minimum pairwise distance between colors
 	in the OKLAB color space.
 	A higher score indicates a more diverse set of colors.
-	:param colors: List of colors.
+
+	:param colors: List of colors or a `Palette` object.
+	:return: Color diversity score.
 	'''
-	colors = np.array([
-		convert_color(c, detect_format(c), COLOR_FORMATS.OKLAB).get_value()
-		for c in colors
-	])
+	if type(colors) == Palette:
+		colors = np.array(colors.get_color_values(COLOR_FORMATS.OKLAB))
+	else:
+		colors = np.array([
+			convert_color(c, detect_format(c), COLOR_FORMATS.OKLAB).get_value()
+			for c in colors
+		])
 	return np.min(
 		np.linalg.norm(
 			colors[None]-colors[:,None], axis=-1
 		)[np.triu_indices(len(colors),1)]
 	)
-def cblind_score(colors, cblind_modes=np.eye(3)):
+def cblind_score(colors: Union[Palette, Iterable[ColorLike]], cblind_modes: Iterable[np.ndarray]=np.eye(3)) -> float:
 	"""
 	Compute the colorblind score for a set of colors.
 	The score is the average oklab diversity score of the colors
 	after simulating a series of colorblind modes.
 	A higher score indicates a more colorblind-friendly set of colors.
+
 	:param colors: List of colors.
 	:param cblind_modes: Colorblind modes to simulate.
 		The modes designate a mixture of the influence of protanopia,
 		deuteranopia, and tritanopia with individual weights between 0 and 1.
+	:return: Colorblind score.
 	"""
 	from colorblind import simulate_colorblind
 	mode_scores = np.zeros(len(cblind_modes))
-	colors = [
-		convert_color(c, detect_format(c), COLOR_FORMATS.rgba)
-		for c in colors
-	]
+	if type(colors) == Palette:
+		colors = np.array(colors.get_color_values(COLOR_FORMATS.OKLAB))
+	else:
+		colors = np.array([
+			convert_color(c, detect_format(c), COLOR_FORMATS.rgba)
+			for c in colors
+		])
 	for i_mode, mode in enumerate(cblind_modes):
 		sim_colors = [simulate_colorblind(c, *mode) for c in colors]
 		mode_scores[i_mode] = oklab_diversity_score(sim_colors)
 	return np.mean(mode_scores)
-def random_colors(n_total, **optim_params):
+def random_colors(n_total: int, **optim_params) -> list[Color]:
 	'''
 	Generate a random palette of colors by randomly sampling
 	RGB values and optimizing them for diversity and colorblindness.
+
 	:param n_total: Number of colors in the palette.
 	:param optim_params: Parameters for the optimization algorithm
 		used to optimize the palette (see optimize_palette).
+	:return: List of colors.
 	'''
 	init = [Color(COLOR_FORMATS.rgb, np.random.sample(3)) for _ in range(n_total)]
 	return optimize_palette(
 		init,
 		**optim_params,
 	)
-def optimize_palette(colors, change_weight=.1, cblind_weight=.5, cblind_modes=np.eye(3), out_format=None):
+def optimize_palette(colors: Union[Palette, Iterable[ColorLike]], change_weight:float=.1, cblind_weight:float=.5, cblind_modes:Iterable[np.ndarray]=np.eye(3), out_format:Union[COLOR_FORMATS,None]=None) -> Union[Palette, list[Color]]:
 	'''
 	Optimize a palette of colors for diversity and colorblindness.
+
 	:param colors: List of colors to optimize.
 	:param change_weight: Weight of the change in color values.
 		0 means the change in color values is ignored and only
@@ -69,7 +83,8 @@ def optimize_palette(colors, change_weight=.1, cblind_weight=.5, cblind_modes=np
 	:param cblind_modes: Colorblind modes to simulate.
 		The modes designate a mixture of the influence of protanopia,
 		deuteranopia, and tritanopia with individual weights between 0 and 1.
-	:param out_format: Output format of the colors.
+	:param out_format: Output format of the colors. If `None` is specified, uses the detected format of the first input color.
+	:return: Optimized palette of colors either as `Palette` iff input was a `Palette` object or as list of `Color`s.
 	'''
 	if type(colors) == Palette:
 		in_palette = colors
@@ -126,17 +141,19 @@ def optimize_palette(colors, change_weight=.1, cblind_weight=.5, cblind_modes=np
 			for n,c in zip(in_palette.get_color_names(), res_colors)
 		])
 	else: return res_colors
-def extend_colors(colors, n_total, out_format=None, post_optimize=True, **optimize_kwargs):
+def extend_colors(colors: Iterable[ColorLike], n_total: int, out_format:Union[COLOR_FORMATS,None]=None, post_optimize:bool=True, **optimize_kwargs) -> list[Color]:
 	'''
 	Attempts to automatically extend an existing palette of colors
 	to a larger palette by fitting a linear model to the colors
 	in OKLAB color space and oversampling along the dominant direction.
+
 	:param colors: List of colors to extend.
 	:param n_total: Number of colors in the extended palette.
-	:param out_format: Output format of the colors.
+	:param out_format: Output format of the colors. If `None` is specified, uses the detected format of the first input color.
 	:param post_optimize: Whether to optimize the extended palette.
 	:param optimize_kwargs: Parameters for the optimization algorithm
 		used to optimize the palette (see optimize_palette).
+	:return: List of colors.
 	'''
 	if out_format is None: out_format = detect_format(colors[0])
 	colors = np.array([
@@ -196,7 +213,7 @@ def extend_colors(colors, n_total, out_format=None, post_optimize=True, **optimi
 	new_colors[:,2] = np.clip(new_colors[:,2], -.5, .5)
 	result = np.concatenate([colors,new_colors])
 	result = [convert_color(c, COLOR_FORMATS.OKLAB, out_format) for c in result]
-	if post_optimize: result = optimize_palette(result, in_format=out_format, **optimize_kwargs)
+	if post_optimize: result = optimize_palette(result, **optimize_kwargs)
 	return result
 
 if 0: # Example

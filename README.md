@@ -173,3 +173,7 @@ new_img_arr = np.clip(new_img_arr, 0, 255)
 display(Image.fromarray(np.concatenate([img_arr,new_img_arr],axis=1)))
 ```
 
+## Open Issues
+
+The colorblindness simulation code is still a bit work-in-progress.
+It works, but gives somewhat different results than reference implementations, so that has to be verified.

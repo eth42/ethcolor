@@ -1,5 +1,6 @@
 from enum import Enum
 import numpy as np
+from typing import Union
 
 _rgb_to_cie_mat = np.array([
 	[0.4124564, 0.3575761, 0.1804375],
@@ -33,6 +34,29 @@ _lms_to_oklab_mat = np.array([
 ])
 
 class COLOR_FORMATS(Enum):
+	'''
+	Enumeration of color formats.
+
+	- RGB: RGB color with values in [0,255] as numpy array.
+	- RGBA: RGBA color with values in [0,255] as numpy array.
+	- RGB_S: String representation of RGB.
+	- RGBA_S: String representation of RGBA.
+	- rgb: RGB color with values in [0,1] as numpy array.
+	- rgba: RGBA color with values in [0,1] as numpy array.
+	- rgb_S: String representation of rgb.
+	- rgba_S: String representation of rgba.
+	- HEX: Hexadecimal color string with 1 or 2 bytes per channel and 3 or 4 channels (output is always 4 channels, i.e. RGBA).
+	- CIE: CIE XYZ color as numpy array.
+	- CIEA: CIE XYZA color as numpy array.
+	- LMS: LMS color as numpy array.
+	- LMSA: LMSA color as numpy array.
+	- OKLAB: OKLab color as numpy array.
+	- OKLABA: OKLabA color as numpy array.
+	- HSL: HSL color as numpy array.
+	- HSLA: HSLA color as numpy array.
+	- HSV: HSV color as numpy array.
+	- HSVA: HSVA color as numpy array.
+	'''
 	RGB = 1
 	RGBA = 2
 	RGB_S = 3
@@ -54,20 +78,56 @@ class COLOR_FORMATS(Enum):
 	HSVA = 19
 
 class Color:
-	def __init__(self, format, value):
+	'''
+	Color class to store color values in different formats.
+	'''
+	def __init__(self: 'Color', format: COLOR_FORMATS, value: Union[str,np.ndarray]):
+		'''
+		Create a new color object.
+		This does not check whether the value is valid for the format.
+		It is advised to use `convert_color` with the appropriate output format.
+
+		:param format: Color format.
+		:param value: Color value.
+		'''
 		self.format = format
 		self.value = value
-	def get_value(self, out_format=None):
+	def get_value(self: 'Color', out_format: Union[COLOR_FORMATS,None]=None) -> Union[str,np.ndarray]:
+		'''
+		Get the color value in the specified format.
+		If no format is specified, the value is returned as is.
+
+		:param out_format: Output format of the color.
+		:return: Color value in the specified format.
+		'''
 		if out_format is None: return self.value
 		return convert_color(self.value, self.format, out_format).value
-	def get_format(self):
+	def get_format(self: 'Color') -> COLOR_FORMATS:
+		'''
+		Get the format of the color.
+
+		:return: Color format.
+		'''
 		return self.format
-	def __repr__(self):
+	def __repr__(self: 'Color'):
 		return f"<{self.format.name}: {self.value}>"
-	def __str__(self):
+	def __str__(self: 'Color'):
 		return convert_color(self, out_format=COLOR_FORMATS.RGBA_S).value
 
-def detect_format(c):
+ColorLike = Union[str, np.ndarray, Color]
+
+def detect_format(c: ColorLike) -> COLOR_FORMATS:
+	'''
+	Detect the format of a color value.
+	If the color is a `Color` object, the format is returned directly.
+	If the color is a string, the format is detected based on the string content.
+	Only `HEX`, `RGB_S`, `RGBA_S`, `rgb_S`, and `rgba_S` formats are supported for strings.
+	If the color is a numpy array, the format is detected based on the shape and data type.
+	Only `RGB`, `RGBA`, `rgb`, and `rgba` formats are supported for numpy arrays.
+
+	:param c: Color value.
+	:return: Detected color format.
+	'''
 	if type(c) == Color: return c.get_format()
 	if type(c) == str:
 		if c[0] == "#": return COLOR_FORMATS.HEX
@@ -83,7 +143,16 @@ def detect_format(c):
 			if len(c) == 3: return COLOR_FORMATS.RGB
 			if len(c) == 4: return COLOR_FORMATS.RGBA
 	raise ValueError("Cannot detect color format for \"{:}\"".format(c))
-def convert_color(c, from_format=None, out_format=COLOR_FORMATS.rgba):
+def convert_color(c: ColorLike, from_format:Union[COLOR_FORMATS,None]=None, out_format: COLOR_FORMATS=COLOR_FORMATS.rgba) -> Color:
+	'''
+	Convert a color value from one format to another.
+	If the input format is not specified, it is detected automatically using `detect_format`.
+
+	:param c: Color value.
+	:param from_format: Input format of the color.
+	:param out_format: Output format of the color.
+	:return: Color object with the value in the specified format.
+	'''
 	if from_format is None: from_format = detect_format(c)
 	if type(c) == Color: c = c.get_value()
 	# Move to standardized format
@@ -132,12 +201,13 @@ def convert_color(c, from_format=None, out_format=COLOR_FORMATS.rgba):
 		case _: raise ValueError("Unknown color format \"{:}\"".format(out_format))
 	return Color(out_format, result)
 
+def _convert_rgba_to_rgba(c): return c
+
 def _convert_RGB_to_rgba(c): return np.array([*(c/255),1.])
 def _convert_RGBA_to_rgba(c): return c/255
 def _convert_RGB_S_to_rgba(c): return _convert_RGB_to_rgba(np.array([int(v) for v in c[4:-1].split(",")]))
 def _convert_RGBA_S_to_rgba(c): return _convert_RGBA_to_rgba(np.array([int(v) for v in c[5:-1].split(",")]))
 def _convert_rgb_to_rgba(c): return np.array([*c,1.])
-def _convert_rgba_to_rgba(c): return c
 def _convert_rgb_S_to_rgba(c): return np.array([float(v) for v in c[4:-1].split(",")]+[1])
 def _convert_rgba_S_to_rgba(c): return np.array([float(v) for v in c[5:-1].split(",")])
 def _convert_hex_to_rgba(c):
@@ -236,7 +306,6 @@ def _convert_rgba_to_RGBA(c): return np.round(c*255).astype(int)
 def _convert_rgba_to_RGB_S(c): return "RGB({},{},{})".format(*_convert_rgba_to_RGB(c))
 def _convert_rgba_to_RGBA_S(c): return "RGBA({},{},{},{})".format(*_convert_rgba_to_RGBA(c))
 def _convert_rgba_to_rgb(c): return c[:3]
-def _convert_rgba_to_rgba(c): return c
 def _convert_rgba_to_rgb_S(c): return "rgb({},{},{})".format(*_convert_rgba_to_rgb(c))
 def _convert_rgba_to_rgba_S(c): return "rgba({},{},{},{})".format(*_convert_rgba_to_rgba(c))
 def _convert_rgba_to_hex(c, alpha=False): return "#"+"".join(["{:02x}".format(v) for v in _convert_rgba_to_RGBA(c[:4 if alpha else 3])])
