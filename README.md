@@ -167,16 +167,48 @@ print(ethcolor.default_palettes.get_palette("random").to_python())
 ```python
 # Palette: random
 palette = ethcolor.Palette("random", [
-  ["spring_green", "RGB(0,255,118)"],
-  ["yellow_sea", "RGB(255,168,0)"],
-  ["observatory", "RGB(0,132,111)"],
-  ["christalle", "RGB(48,0,110)"],
-  ["torch_red", "RGB(241,0,45)"],
-  ["blue", "RGB(57,0,255)"],
-  ["dull_lavender", "RGB(182,139,255)"],
-  ["deep_fir", "RGB(0,59,0)"],
+  ["caribbean_green", "RGB(0,255,153)"],
+  ["gamboge", "RGB(238,145,0)"],
+  ["observatory", "RGB(0,153,113)"],
+  ["blue_diamond", "RGB(54,0,115)"],
+  ["cardinal", "RGB(196,0,56)"],
+  ["blue", "RGB(18,0,255)"],
+  ["dull_lavender", "RGB(181,155,255)"],
+  ["midnight_moss", "RGB(0,27,0)"],
 ])
 ```
+</details><br/>
+
+Creating a palette from a desired color, here `#d9bb26` and 7 other colors and masking the desired color to not change during optimization:
+
+```python
+import ethcolor
+import numpy as np
+np.random.seed(1)
+main_color = "#d9bb26"
+# Starting colors are the main hex-format color and 7 random rgb-format colors
+init_colors = [main_color, *np.random.sample((7,3))]
+# A mask with False at the first index and True everywhere else
+mask = np.arange(len(init_colors)) > 0
+# Also optimize with fixed white and black for good contrast in both day- and night-mode
+opt_colors = ethcolor.optimize_palette(
+	init_colors + ["#fff", "#000"],
+	change_weight=.1,
+	mask=list(mask) + [False, False],
+)[:-2]
+# Ensure that the first color did not change
+assert init_colors[0] == opt_colors[0].get_value(ethcolor.COLOR_FORMATS.HEX)
+# Display the palettes sorted by hue values
+ethcolor.display_palette(ethcolor.hue_sort(init_colors))
+ethcolor.display_palette(ethcolor.hue_sort(opt_colors))
+```
+
+<details>
+<summary>Output</summary>
+
+![Random palette](readme_assets/example3b.1.png)
+
+![Random palette](readme_assets/example3b.2.png)
 </details><br/>
 
 Creating a color gradient and using it as a color scale in a plotly figure:

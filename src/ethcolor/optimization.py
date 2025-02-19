@@ -64,15 +64,21 @@ def random_colors(n_total: int, black=False, white=False, **optim_params) -> lis
 	:return: List of colors.
 	'''
 	init = [Color(COLOR_FORMATS.rgb, np.random.sample(3)) for _ in range(n_total)]
-	if black: init.append(Color(COLOR_FORMATS.rgb, np.zeros(3)))
-	if white: init.append(Color(COLOR_FORMATS.rgb, np.ones(3)))
+	mask = [True] * n_total
+	if black:
+		init.append(Color(COLOR_FORMATS.rgb, np.zeros(3)))
+		mask.append(False)
+	if white:
+		init.append(Color(COLOR_FORMATS.rgb, np.ones(3)))
+		mask.append(False)
 	result = optimize_palette(
 		init,
+		mask=mask,
 		**optim_params,
 	)
 	assert type(result) == list
 	return result
-def optimize_palette(colors: Union[Palette, Iterable[ColorLike]], change_weight:float=.1, cblind_weight:float=.5, cblind_modes:Iterable[np.ndarray]=np.eye(3), out_format:Union[COLOR_FORMATS,None]=None) -> Union[Palette, list[Color]]:
+def optimize_palette(colors: Union[Palette, Iterable[ColorLike]], change_weight:float=.1, cblind_weight:float=.5, cblind_modes:Iterable[np.ndarray]=np.eye(3), mask:Union[Iterable[bool],None]=None, out_format:Union[COLOR_FORMATS,None]=None) -> Union[Palette, list[Color]]:
 	'''
 	Optimize a palette of colors for diversity and colorblindness.
 
@@ -89,6 +95,7 @@ def optimize_palette(colors: Union[Palette, Iterable[ColorLike]], change_weight:
 	:param cblind_modes: Colorblind modes to simulate.
 		The modes designate a mixture of the influence of protanopia,
 		deuteranopia, and tritanopia with individual weights between 0 and 1.
+	:param mask: Mask for the colors to optimize. This should be a list/array of booleans, where `True` means the color is optimized and `False` means it is kept as is. If `None`, all colors are optimized.
 	:param out_format: Output format of the colors. If `None` is specified, uses the detected format of the first input color.
 	:return: Optimized palette of colors either as `Palette` iff input was a `Palette` object or as list of `Color`s.
 	'''
@@ -103,12 +110,17 @@ def optimize_palette(colors: Union[Palette, Iterable[ColorLike]], change_weight:
 	from scipy.optimize import minimize
 	# Translate to OKLAB color space
 	colors = np.array([
-		convert_color(c, detect_format(c), COLOR_FORMATS.OKLAB).get_value()
+		convert_color(c, detect_format(c), COLOR_FORMATS.OKLAB)
 		for c in colors
 	])
+	color_values = np.array([
+		c.get_value()
+		for c in colors
+	])
+	mask = np.array([*mask], dtype=bool) if not mask is None else np.ones(len(colors),dtype=bool)
 	def objective(x):
 		# Reshape to OKLAB colors
-		new_colors = x.reshape(colors.shape)
+		new_colors = x.reshape(color_values.shape)
 		# Translate to RGB to fix out-of-bounds values
 		new_colors = np.array([
 			convert_color(c, COLOR_FORMATS.OKLAB, COLOR_FORMATS.rgb).get_value()
@@ -116,15 +128,17 @@ def optimize_palette(colors: Union[Palette, Iterable[ColorLike]], change_weight:
 		])
 		new_colors = np.clip(new_colors, 0, 1)
 		# Translate back to OKLAB
-		new_colors = [
+		new_colors = np.array([
 			convert_color(c, COLOR_FORMATS.rgb, COLOR_FORMATS.OKLAB)
 			for c in new_colors
-		]
+		])
 		new_color_values = np.array([c.get_value() for c in new_colors])
+		new_colors[~mask] = colors[~mask]
+		new_color_values[~mask] = color_values[~mask]
 		# Compute scores
 		new_colors_base_score = oklab_diversity_score(new_colors)
 		new_colors_cb_score = cblind_score(new_colors, cblind_modes)
-		new_colors_diff_score = np.mean(np.linalg.norm(colors-new_color_values,axis=-1)**2)
+		new_colors_diff_score = np.mean(np.linalg.norm(color_values-new_color_values,axis=-1)**2)
 		total_score = (
 			change_weight*new_colors_diff_score
 			- (1-change_weight) * (
@@ -133,11 +147,11 @@ def optimize_palette(colors: Union[Palette, Iterable[ColorLike]], change_weight:
 			)
 		)
 		return total_score
-	res = minimize(objective, colors.flatten(), bounds=[
+	res = minimize(objective, color_values.flatten(), bounds=[
 		(0,1) if i==0 else (-.5,.5)
 		for _ in range(len(colors))
 		for i in range(3)
-	]).x.reshape(colors.shape)
+	]).x.reshape(color_values.shape)
 	res = np.array([
 		convert_color(c, COLOR_FORMATS.OKLAB, COLOR_FORMATS.rgb).get_value()
 		for c in res
