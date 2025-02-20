@@ -148,10 +148,9 @@ import ethcolor
 import numpy as np
 # Seeding of the numpy random generator for reproducible palette generation
 np.random.seed(42)
-# Setting `white=True` appends white before optimizing, such that all colors
-# get pushed away from white. Indexing up to the last element removes white,
-# so we do not add it to our palette.
-colors = ethcolor.random_colors(8, white=True)[:-1]
+# Setting `white=True` appends white during optimizing, such that all colors
+# get pushed away from white.
+colors = ethcolor.random_colors(8, white=True)
 palette = ethcolor.colors_to_palette("random", colors, name_format=ethcolor.NAME_FORMATS.SNAKE)
 ethcolor.default_palettes.add_palette(palette)
 # Displaying the new palette
@@ -192,10 +191,12 @@ init_colors = [main_color, *np.random.sample((7,3))]
 mask = np.arange(len(init_colors)) > 0
 # Also optimize with fixed white and black for good contrast in both day- and night-mode
 opt_colors = ethcolor.optimize_palette(
-	init_colors + ["#fff", "#000"],
+	init_colors,
 	change_weight=.1,
-	mask=list(mask) + [False, False],
-)[:-2]
+	mask=list(mask),
+	black=True,
+	white=True,
+)
 # Ensure that the first color did not change
 assert init_colors[0] == opt_colors[0].get_value(ethcolor.COLOR_FORMATS.HEX)
 # Display the palettes sorted by hue values
@@ -210,6 +211,79 @@ ethcolor.display_palette(ethcolor.hue_sort(opt_colors))
 
 ![Random palette](readme_assets/example3b.2.png)
 </details><br/>
+
+Extend an existing palette with additional colors optimized for visual diversity while keeping the original colors
+
+```python
+import ethcolor
+import numpy as np
+np.random.seed(1)
+start_colors = ["#df928e", "#f4b942", "#3c4f76"]
+# Extend palette to 8 colors, also use black and white during optimization
+# to have good contrast on white and black backgrounds
+opt_colors = ethcolor.extend_colors(
+	start_colors, 8,
+	black=True, white=True,
+)
+# Ensure that the first three colors did not change
+for i in range(len(start_colors)):
+	assert start_colors[i] == opt_colors[i].get_value(ethcolor.COLOR_FORMATS.HEX)
+# Display the palettes
+ethcolor.display_palette(start_colors)
+ethcolor.display_palette(opt_colors)
+```
+
+<details>
+<summary>Output</summary>
+
+![Random palette](readme_assets/example3c.1.png)
+
+![Random palette](readme_assets/example3c.2.png)
+</details><br/>
+
+Incrementally create a random palette, such that the first 4 colors are optimized for visual diversity and any additional color is most diverse from the already generated colors. I.e. the first 4 must be mutually diverse, the 5th is optimized to be different from the first 4, the 6th is different from the first 5 and so on.
+This time, the optimization is only constrained to be different from white for use in prints.
+
+```python
+import ethcolor
+import numpy as np
+np.random.seed(20)
+# Generate 12 colors, where the first 4 are most diverse and
+# every additional color differs from the previous ones.
+rand_colors = ethcolor.random_incremental_colors(
+	n_total=12, n_start=4, n_increment=1,
+	white=True,
+)
+# Display the palettes
+ethcolor.display_palette(rand_colors)
+# Print generating python code
+print(ethcolor.colors_to_palette("incremental", rand_colors).to_python())
+```
+
+<details>
+<summary>Output</summary>
+
+![Random palette](readme_assets/example3d.1.png)
+
+```python
+# Palette: incremental
+palette = ethcolor.Palette("incremental", [
+  ["blue_lagoon", "RGB(0,115,131)"],
+  ["guardsman_red", "RGB(190,0,3)"],
+  ["carissma", "RGB(229,144,169)"],
+  ["blue", "RGB(54,0,255)"],
+  ["chartreuse", "RGB(119,198,0)"],
+  ["medium_purple", "RGB(168,89,255)"],
+  ["grape", "RGB(55,30,94)"],
+  ["cyan_/_aqua", "RGB(0,219,255)"],
+  ["buttered_rum", "RGB(169,125,0)"],
+  ["celadon", "RGB(185,224,162)"],
+  ["black", "RGB(0,1,0)"],
+  ["west_coast", "RGB(99,80,16)"],
+])
+```
+</details><br/>
+
 
 Creating a color gradient and using it as a color scale in a plotly figure:
 
