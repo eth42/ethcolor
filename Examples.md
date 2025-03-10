@@ -1,9 +1,21 @@
 # Examples
 
+- [Improving an existing Palette](#improving-an-existing-palette)
+- [LaTeX-Export](#latex-export)
+- [Automatic Color Names](#automatic-color-names)
+- [Creating a Palette using a base color](#creating-a-palette-using-a-base-color)
+- [Extending a Palette](#extending-a-palette)
+- [Incremental Palette Creation](#incremental-palette-creation)
+- [Gradient Interpolation](#gradient-interpolation)
+- [Reshading an Image](#reshading-an-image)
+
+## Improving an existing Palette
+
 Loading the plotly default palette, adding black and white, modifying it for better visibility and displaying the original and the optimized version in the IPython shell as is and with different types of simulated colorblindnesses:
 
 <details>
 <summary>Code</summary>
+
 ```python
 import ethcolor
 from ethcolor import display_palette, simulate_colorblind, hue_sort
@@ -55,11 +67,13 @@ No colorblindness
 ![Improved palette](readme_assets/example1.8.png)
 </details><hr/>
 
+## LaTeX-Export
 
 Exporting a palette to LaTeX code:
 
 <details>
 <summary>Code</summary>
+
 ```python
 import ethcolor
 print(ethcolor.default_palettes.get_palette("cblind").to_latex("cb"))
@@ -82,10 +96,13 @@ print(ethcolor.default_palettes.get_palette("cblind").to_latex("cb"))
 ```
 </details><hr/>
 
+## Automatic Color Names
+
 Creating a random color palette, automatically detect color names in snake case, adding the palette to the default palette manager, and printing Python code to define the palette in the future without running the optimization:
 
 <details>
 <summary>Code</summary>
+
 ```python
 import ethcolor
 import numpy as np
@@ -120,12 +137,15 @@ palette = ethcolor.Palette("random", [
   ["midnight_moss", "RGB(0,27,0)"],
 ])
 ```
-</details><br/>
+</details><hr/>
+
+## Creating a Palette using a base color
 
 Creating a palette from a desired color, here `#d9bb26` and 7 other colors and masking the desired color to not change during optimization:
 
 <details>
 <summary>Code</summary>
+
 ```python
 import ethcolor
 import numpy as np
@@ -157,12 +177,15 @@ ethcolor.display_palette(ethcolor.hue_sort(opt_colors))
 ![Random palette](readme_assets/example3b.1.png)
 
 ![Random palette](readme_assets/example3b.2.png)
-</details><br/>
+</details><hr/>
+
+## Extending a Palette
 
 Extend an existing palette with additional colors optimized for visual diversity while keeping the original colors
 
 <details>
 <summary>Code</summary>
+
 ```python
 import ethcolor
 import numpy as np
@@ -189,13 +212,16 @@ ethcolor.display_palette(opt_colors)
 ![Random palette](readme_assets/example3c.1.png)
 
 ![Random palette](readme_assets/example3c.2.png)
-</details><br/>
+</details><hr/>
+
+## Incremental Palette Creation
 
 Incrementally create a random palette, such that the first 4 colors are optimized for visual diversity and any additional color is most diverse from the already generated colors. I.e. the first 4 must be mutually diverse, the 5th is optimized to be different from the first 4, the 6th is different from the first 5 and so on.
 This time, the optimization is only constrained to be different from white for use in prints.
 
 <details>
 <summary>Code</summary>
+
 ```python
 import ethcolor
 import numpy as np
@@ -235,13 +261,15 @@ palette = ethcolor.Palette("incremental", [
   ["west_coast", "RGB(99,80,16)"],
 ])
 ```
-</details><br/>
+</details><hr/>
 
+## Gradient Interpolation
 
 Creating a color gradient and using it as a color scale in a plotly figure:
 
 <details>
 <summary>Code</summary>
+
 ```python
 import ethcolor
 import numpy as np
@@ -278,7 +306,9 @@ go.Figure(
 <summary>Output</summary>
 
 ![Colored scatter plot](readme_assets/example4.1.png)
-</details><br/>
+</details><hr/>
+
+## Reshading an Image
 
 Load an image and update its colors to be more diverse/differentiable.
 Displays the palette before and after optimization.
@@ -362,4 +392,5 @@ display(Image.fromarray(np.concatenate([img_arr,new_img_arr],axis=1)))
 ![Colored scatter plot](readme_assets/example5.3.png)
 
 ![Colored scatter plot](readme_assets/example5.4.png)
-</details><br/>
+</details>
+
