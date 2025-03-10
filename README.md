@@ -26,6 +26,20 @@ The main goal is thus, to have very distinguishable colors for colorblind and no
 
 ![Okabe and Ito Palette](readme_assets/default_palette.png)
 
+### • Easy to use
+
+```python
+>>> import ethcolor as ec
+>>> import numpy as np
+>>> import plotly.graph_objects as go
+>>> np.random.seed(0)
+>>> ys = np.random.sample((5,1)) * np.arange(100)[None] + np.random.normal(0,1,size=(5,100))
+>>> palette = ec.default_palettes.get_palette("cblind")
+>>> go.Figure([go.Scatter(y=ys[i], line_color=palette.get_color(i+1).get_value()) for i in range(len(ys))]).show()
+```
+
+![Simple Example](readme_assets/easy_example.png)
+
 ### • Palette management with pattern-matching IO
 
 ```python
