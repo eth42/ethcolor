@@ -37,7 +37,7 @@ The main goal is thus, to have very distinguishable colors for colorblind and no
 \definecolor{simple_blue}{RGB}{0,0,255}
 ```
 
-### • Numerically optimized palettes of any size
+### • Numerically optimized palette generation of any size
 
 ![4 colors](readme_assets/lines_random_4.png)
 ![6 colors](readme_assets/lines_random_6.png)
