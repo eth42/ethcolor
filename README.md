@@ -29,9 +29,7 @@ The main goal is thus, to have very distinguishable colors for colorblind and no
 ### • Easy to use
 
 ```python
->>> import ethcolor as ec
->>> import numpy as np
->>> import plotly.graph_objects as go
+>>> import ethcolor as ec, numpy as np, plotly.graph_objects as go
 >>> np.random.seed(0)
 >>> ys = np.random.sample((5,1)) * np.arange(100)[None] + np.random.normal(0,1,size=(5,100))
 >>> palette = ec.default_palettes.get_palette("cblind")
