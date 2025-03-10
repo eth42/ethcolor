@@ -247,7 +247,7 @@ def _convert_ciea_to_rgba(c: _float_arr) -> _float_arr:
 	rgb = np.where(
 		c_linear <= 0.0031308,
 		12.92 * c_linear,
-		1.055 * np.power(c_linear, 1/2.4) - 0.055,
+		1.055 * np.power(np.maximum(0,c_linear), 1/2.4) - 0.055,
 	)
 	rgb = np.clip(rgb, 0, 1)
 	return np.array([*rgb,c[3]])
